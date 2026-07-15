@@ -1,0 +1,18 @@
+#!/bin/sh
+### Rozhuk Ivan 2026
+### chroot config file for rtadvd (system)
+###
+
+
+CHROOT_DIR='/var/run/chroot-rtadvd'
+CHROOT_USER='root'
+CHROOT_MNT_ROOT_SIZE='16m'
+CHROOT_MNT_MAP_RW="
+/var/run
+"
+CHROOT_APP_CP_LIST="
+/etc/rtadvd.conf
+"
+CHROOT_APP_EXEC_LIST="
+/usr/sbin/rtadvd
+"

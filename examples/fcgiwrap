@@ -1,0 +1,28 @@
+#!/bin/sh
+### Rozhuk Ivan 2026
+### chroot config file for fcgiwrap
+###
+
+
+CHROOT_DIR='/var/run/chroot-fcgiwrap'
+CHROOT_USER='www'
+CHROOT_MNT_ROOT_SIZE='128m'
+CHROOT_MNT_TMP_SIZE='8m'
+CHROOT_MNT_TMP_ARGS='-o noexec -o nosuid -o inodes=8k'
+CHROOT_MNT_MAP_RO="
+/var/log
+"
+CHROOT_MNT_MAP_RW="
+/var/db/awstats
+/var/run
+"
+CHROOT_APP_CP_LIST="
+/usr/local/www/awstats/cgi-bin/awstats.netlab.linkpc.net.conf
+"
+CHROOT_APP_EXEC_LIST="
+/usr/sbin/daemon
+/usr/local/sbin/fcgiwrap
+"
+CHROOT_PORTS_WITH_DEPS_NAMES="
+www/awstats
+"

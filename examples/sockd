@@ -1,0 +1,18 @@
+#!/bin/sh
+### Rozhuk Ivan 2026
+### chroot config file for net/dante
+###
+
+
+CHROOT_DIR='/var/run/chroot-sockd'
+CHROOT_USER='www'
+CHROOT_MNT_ROOT_SIZE='16m'
+CHROOT_MNT_MAP_RW="
+/var/run
+"
+CHROOT_APP_CP_LIST="
+/usr/local/etc/sockd.conf
+"
+CHROOT_APP_EXEC_LIST="
+/usr/local/sbin/sockd
+"

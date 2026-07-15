@@ -1,0 +1,28 @@
+#!/bin/sh
+### Rozhuk Ivan 2026
+### chroot config file for dns/dnsmasq
+###
+
+
+CHROOT_DIR='/var/run/chroot-dnsmasq'
+CHROOT_USER='nobody'
+CHROOT_GROUP='nobody'
+CHROOT_MNT_ROOT_SIZE='16m'
+CHROOT_MNT_MAP_RO="
+/usr/local/tftproot
+"
+CHROOT_MNT_MAP_RW="
+/var/db/dnsmasq.leases
+/var/run
+"
+CHROOT_APP_DEVFS_RULES="
+path bpf unhide
+path bpf* unhide
+"
+CHROOT_APP_CP_LIST="
+/usr/local/etc/dnsmasq.conf
+/usr/local/etc/dnsmasq.conf.local
+"
+CHROOT_PORTS_NAMES="
+dns/dnsmasq
+"

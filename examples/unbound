@@ -1,0 +1,15 @@
+#!/bin/sh
+### Rozhuk Ivan 2026
+### chroot config file for dns/unbound
+### chroot configured using app config!
+
+
+CHROOT_DIR='/var/run/chroot-unbound'
+CHROOT_USER='unbound'
+CHROOT_MNT_ROOT_SIZE='24m'
+CHROOT_APP_CP_LIST="
+/usr/local/etc/unbound
+"
+CHROOT_APP_EXEC_LIST="
+/usr/local/sbin/unbound
+"

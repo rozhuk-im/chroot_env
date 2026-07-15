@@ -1,0 +1,32 @@
+#!/bin/sh
+### Rozhuk Ivan 2009.05-2026
+### chroot config file for php
+### chroot configured using app config!
+### www/dokuwiki-devel
+
+
+CHROOT_DIR='/var/run/chroot-php-dokuwiki'
+CHROOT_USER='www'
+CHROOT_MNT_ROOT_SIZE='128m'
+CHROOT_MNT_TMP_SIZE='32m'
+CHROOT_MNT_TMP_ARGS='-o noexec -o nosuid -o inodes=128k'
+CHROOT_APP_CP_LIST="
+/usr/local/etc/php
+/usr/local/etc/php.conf
+/usr/local/etc/php.ini
+/usr/local/lib/php
+"
+CHROOT_APP_EXEC_LIST="
+/usr/local/bin/php-cgi
+"
+CHROOT_PORTS_NAMES="
+www/dokuwiki-devel
+"
+CHROOT_INIT_HOOK='chroot_init_hook_fn'
+chroot_init_hook_fn() {
+	# RO app data: different names is used.
+	mv "${CHROOT_DIR}/usr/local/www/dokuwiki" "${CHROOT_DIR}/usr/local/www/wiki"
+	# RW app data.
+	mount_nullfs -o rw -o nocache -o noatime -o noexec -o nosuid '/var/db/chroots/dokuwiki/conf' "${CHROOT_DIR}/usr/local/www/wiki/conf"
+	mount_nullfs -o rw -o nocache -o noatime -o noexec -o nosuid '/var/db/chroots/dokuwiki/data' "${CHROOT_DIR}/usr/local/www/wiki/data"
+}

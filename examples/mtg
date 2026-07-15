@@ -1,0 +1,19 @@
+#!/bin/sh
+### Rozhuk Ivan 2026
+### chroot config file for net/mtg
+###
+
+
+CHROOT_DIR='/var/run/chroot-mtg'
+CHROOT_USER='www'
+CHROOT_MNT_ROOT_SIZE='32m'
+CHROOT_MNT_MAP_RW="
+/var/run
+"
+CHROOT_APP_CP_LIST="
+/usr/local/etc/mtg
+"
+CHROOT_APP_EXEC_LIST="
+/usr/sbin/daemon
+/usr/local/bin/mtg
+"

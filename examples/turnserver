@@ -1,0 +1,15 @@
+#!/bin/sh
+### Rozhuk Ivan 2026
+### chroot config file for net/turnserver
+###
+
+
+CHROOT_DIR='/var/run/chroot-turnserver'
+CHROOT_USER='nobody'
+CHROOT_MNT_ROOT_SIZE='24m'
+CHROOT_APP_CP_LIST="
+/usr/local/etc/turnserver.conf
+"
+CHROOT_APP_EXEC_LIST="
+/usr/local/bin/turnserver
+"

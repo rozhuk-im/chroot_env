@@ -1,0 +1,18 @@
+#!/bin/sh
+### Rozhuk Ivan 2026
+### chroot config file for net/mosquitto
+###
+
+
+CHROOT_DIR='/var/run/chroot-mosquitto'
+CHROOT_USER='nobody'
+CHROOT_MNT_ROOT_SIZE='24m'
+CHROOT_MNT_MAP_RW="
+/var/run
+"
+CHROOT_APP_CP_LIST="
+/usr/local/etc/mosquitto
+"
+CHROOT_APP_EXEC_LIST="
+/usr/local/sbin/mosquitto
+"

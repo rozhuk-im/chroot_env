@@ -1,0 +1,31 @@
+#!/bin/sh
+### Rozhuk Ivan 2026
+### chroot config file for print/cups, print/cups-filters, print/foo2zjs
+###
+
+
+CHROOT_DIR='/var/run/chroot-cups'
+CHROOT_USER='cups'
+CHROOT_GROUP='cups'
+CHROOT_MNT_ROOT_SIZE='512m'
+CHROOT_MNT_TMP_SIZE='8m'
+CHROOT_MNT_TMP_ARGS='-o noexec -o nosuid -o inodes=8k'
+CHROOT_MNT_MAP_RW="
+/var/cache/cups
+/var/log/cups
+/var/spool/cups
+/var/run
+"
+CHROOT_APP_CP_LIST="
+/usr/local/etc/cups
+"
+CHROOT_APP_EXEC_LIST="
+/usr/sbin/daemon
+"
+CHROOT_PORTS_WITH_DEPS_NAMES="
+print/cups
+print/cups-filters
+print/foo2zjs
+"
+
+# UNDONE!

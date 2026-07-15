@@ -1,0 +1,43 @@
+#!/bin/sh
+### Rozhuk Ivan 2009.05-2026
+### chroot config file for databases/mariadb1011-server
+###
+
+
+CHROOT_DIR='/var/run/chroot-mysql'
+CHROOT_USER='mysql'
+CHROOT_MNT_ROOT_SIZE='640m'
+CHROOT_MNT_TMP_SIZE='8m'
+CHROOT_MNT_TMP_ARGS='-o noexec -o nosuid -o inodes=8k'
+CHROOT_MNT_MAP_RW="
+/var/db/mysql
+/var/run
+"
+CHROOT_APP_CP_LIST="
+/usr/local/etc/mysql
+"
+CHROOT_APP_EXEC_LIST="
+/bin/date
+/bin/echo
+/bin/expr
+/bin/mkdir
+/bin/rm
+/bin/sh
+/bin/sleep
+/sbin/sysctl
+/usr/bin/basename
+/usr/bin/cut
+/usr/bin/dirname
+/usr/bin/id
+/usr/bin/limits
+/usr/bin/nice
+/usr/bin/nohup
+/usr/bin/sed
+/usr/bin/tty
+/usr/bin/uname
+/usr/bin/wc
+/usr/sbin/daemon
+"
+CHROOT_PORTS_NAMES="
+databases/mariadb1011-server
+"

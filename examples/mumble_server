@@ -1,0 +1,28 @@
+#!/bin/sh
+### Rozhuk Ivan 2026
+### chroot config file for audio/mumble-server
+###
+
+
+CHROOT_DIR='/var/run/chroot-mumble_server'
+CHROOT_USER='mumble-server'
+CHROOT_GROUP='mumble-server'
+CHROOT_MNT_ROOT_SIZE='480m'
+CHROOT_MNT_MAP_RO="
+/usr/local/etc/mumble
+"
+CHROOT_MNT_MAP_RW="
+/var/db/mumble-server
+/var/log/mumble-server
+/var/run
+"
+CHROOT_APP_CP_LIST="
+/usr/local/share/certs
+"
+CHROOT_APP_EXEC_LIST="
+/usr/bin/logger
+/usr/local/bin/mumble-server
+"
+CHROOT_PORTS_WITH_DEPS_NAMES="
+audio/mumble-server
+"

@@ -1,0 +1,24 @@
+#!/bin/sh
+### Rozhuk Ivan 2026
+### chroot config file for net-p2p/rtorrent
+###
+
+
+CHROOT_DIR='/var/run/chroot-rtorrent'
+CHROOT_USER='www'
+CHROOT_MNT_ROOT_SIZE='32m'
+CHROOT_MNT_MAP_RW="
+/var/db/rtorrent
+/var/run
+"
+CHROOT_APP_CP_LIST="
+/usr/local/etc/rtorrent
+"
+CHROOT_APP_EXEC_LIST="
+/usr/sbin/daemon
+"
+CHROOT_PORTS_NAMES="
+net-p2p/rtorrent-stable
+"
+
+# UNDONE!

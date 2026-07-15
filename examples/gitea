@@ -1,0 +1,27 @@
+#!/bin/sh
+### Rozhuk Ivan 2026
+### chroot config file for www/gitea
+###
+
+
+CHROOT_DIR='/var/run/chroot-gitea'
+CHROOT_USER='git'
+CHROOT_MNT_ROOT_SIZE='224m'
+CHROOT_MNT_TMP_SIZE='8m'
+CHROOT_MNT_TMP_ARGS='-o noexec -o nosuid -o inodes=8k'
+CHROOT_MNT_MAP_RW="
+/usr/local/git
+/var/db/gitea
+/var/log/gitea
+/var/run
+"
+CHROOT_APP_CP_LIST="
+/usr/local/etc/gitea
+"
+CHROOT_PORTS_NAMES="
+www/gitea
+devel/git
+"
+CHROOT_PORTS_FILES_EXCLUDE_LIST="
+/usr/local/share/gitea/options/license/
+"

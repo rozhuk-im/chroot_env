@@ -1,0 +1,54 @@
+#!/bin/sh
+### Rozhuk Ivan 2026
+### chroot config file for sysutils/apcupsd
+###
+
+
+CHROOT_DIR='/var/run/chroot-apcupsd'
+CHROOT_USER='nobody'
+CHROOT_GROUP='nobody'
+CHROOT_MNT_ROOT_SIZE='24m'
+CHROOT_MNT_MAP_RW="
+/var/run
+"
+CHROOT_APP_DEVFS_RULES="
+path cuau3* unhide
+path ttyu3* unhide
+"
+CHROOT_APP_CP_LIST="
+/usr/local/etc/apcupsd
+"
+CHROOT_APP_EXEC_LIST="
+/bin/echo
+/bin/hostname
+/bin/sh
+/sbin/shutdown
+/usr/bin/printf
+/usr/bin/wall
+/usr/local/sbin/apcaccess
+/usr/local/sbin/apctest
+/usr/local/sbin/apcupsd
+/usr/local/sbin/smtp
+"
+CHROOT_INIT_HOOK='chroot_init_hook_fn'
+chroot_init_hook_fn() {
+	local __BIN
+
+	# Init /var/log: required to store extra data.
+	ln -sf '/tmp' "${CHROOT_DIR}/var/log"
+	# Fix perms.
+	# Device access.
+	chown "${CHROOT_USER}:${CHROOT_GROUP}" "${CHROOT_DIR}/dev/cuau3"* "${CHROOT_DIR}/dev/ttyu3"*
+	# Bins exec: by default only root can run apcups port bins.
+	for __BIN in ${CHROOT_APP_EXEC_LIST}; do
+		chmod -R a+rx "${CHROOT_DIR}/${__BIN}"
+	done
+	# Scripts exec add in host config dir!!!
+	for __BIN in apccontrol changeme commfailure commok offbattery onbattery; do
+		chmod -R a+rx "${CHROOT_DIR}//usr/local/etc/apcupsd/${__BIN}"
+	done
+	# Add SU for shutdown.
+	chmod u+s '/sbin/shutdown' > /dev/null 2>&1
+	# Lockup changes.
+	mount -u -o ro "${CHROOT_DIR}"
+}

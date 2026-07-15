@@ -1,0 +1,28 @@
+#!/bin/sh
+### Rozhuk Ivan 2026
+### chroot config file for sh (system)
+###
+
+
+CHROOT_DIR='/var/run/chroot-sh'
+CHROOT_USER='root'
+CHROOT_GROUP='wheel'
+CHROOT_MNT_ROOT_SIZE='64m'
+CHROOT_MNT_TMP_SIZE='8m'
+CHROOT_MNT_TMP_ARGS='-o noexec -o nosuid -o inodes=8k'
+CHROOT_APP_EXEC_LIST="
+/bin/date
+/bin/echo
+/bin/expr
+/bin/mkdir
+/bin/rm
+/bin/sh
+/bin/sleep
+/sbin/ping
+/usr/bin/fetch
+"
+CHROOT_INIT_HOOK='chroot_init_hook_fn'
+chroot_init_hook_fn() {
+	# Lockup changes.
+	#mount -u -o ro "${CHROOT_DIR}"
+}

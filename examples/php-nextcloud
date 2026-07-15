@@ -1,0 +1,45 @@
+#!/bin/sh
+### Rozhuk Ivan 2009.05-2026
+### chroot config file for php
+### chroot configured using app config!
+### www/nextcloud
+
+
+CHROOT_DIR='/var/run/chroot-php-nextcloud'
+CHROOT_USER='www'
+CHROOT_MNT_ROOT_SIZE='1024m'
+CHROOT_MNT_TMP_SIZE='128m'
+CHROOT_MNT_TMP_ARGS='-o noexec -o nosuid -o inodes=128k'
+CHROOT_MNT_MAP_RW="
+/var/log/nextcloud
+"
+CHROOT_APP_CP_LIST="
+/usr/local/etc/php
+/usr/local/etc/php.conf
+/usr/local/etc/php.ini
+/usr/local/lib/php
+"
+CHROOT_APP_EXEC_LIST="
+/usr/local/bin/php-cgi
+"
+CHROOT_PORTS_NAMES="
+www/nextcloud
+"
+CHROOT_INIT_HOOK='chroot_init_hook_fn'
+chroot_init_hook_fn() {
+	# RW app data.
+	mkdir -p -m 0555 "${CHROOT_DIR}/usr/local/www/nextcloud/apps" "${CHROOT_DIR}/usr/local/www/nextcloud/config" "${CHROOT_DIR}/usr/local/www/nextcloud/data"
+	mount_nullfs -o rw -o nocache -o noatime -o noexec -o nosuid '/var/db/chroots/nextcloud/apps' "${CHROOT_DIR}/usr/local/www/nextcloud/apps"
+	mount_nullfs -o rw -o nocache -o noatime -o noexec -o nosuid '/var/db/chroots/nextcloud/config' "${CHROOT_DIR}/usr/local/www/nextcloud/config"
+	cp -af '/var/db/chroots/nextcloud/.user.ini' "${CHROOT_DIR}/usr/local/www/nextcloud/.user.ini"
+	# Supress error, it will not work.
+	if [ -d '/mnt/backup/nextcloud/data' ]; then
+		mount_nullfs -o rw -o nocache -o noatime -o noexec -o nosuid '/mnt/backup/nextcloud/data' "${CHROOT_DIR}/usr/local/www/nextcloud/data"
+	fi
+}
+CHROOT_DEINIT_HOOK='chroot_deinit_hook_fn'
+chroot_deinit_hook_fn() {
+	# RW app data.
+	# Copy back .user.ini.
+	cp -af "${CHROOT_DIR}/usr/local/www/nextcloud/.user.ini" '/var/db/chroots/nextcloud/.user.ini'
+}

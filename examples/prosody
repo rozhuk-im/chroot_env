@@ -1,0 +1,26 @@
+#!/bin/sh
+### Rozhuk Ivan 2026
+### chroot config file for net-im/prosody, net-im/prosody-modules
+###
+
+
+CHROOT_DIR='/var/run/chroot-prosody'
+CHROOT_USER='prosody'
+CHROOT_MNT_ROOT_SIZE='128m'
+CHROOT_MNT_TMP_SIZE='8m'
+CHROOT_MNT_MAP_RW="
+/var/db/prosody
+/var/run
+"
+CHROOT_APP_CP_LIST="
+/usr/local/etc/prosody
+"
+CHROOT_PORTS_WITH_DEPS_NAMES="
+net-im/prosody
+net-im/prosody-modules
+databases/lua-lsqlite3
+"
+# Only libunbound is required, let it be handled by chroot_deps_fixup().
+CHROOT_PORTS_STOP_LIST="
+dns/unbound
+"
