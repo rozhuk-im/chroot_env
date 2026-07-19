@@ -167,6 +167,23 @@ chroot_mount_single() { # ro/rw, filename/dir
 	return 1
 }
 
+chroot_pf_load() { # opt-in via CHROOT_APP_PF_RULES
+	[ -z "${CHROOT_APP_PF_RULES}" ] && return 0
+
+	# App rules first, they need "quick" to win over the deny-all below.
+	printf '%s\n' ${CHROOT_APP_PF_RULES} "block return out quick user ${CHROOT_USER}" "block in quick user ${CHROOT_USER}" | pfctl -a "${CHROOT_APP_PF_ANCHOR}" -f -
+
+	return 0
+}
+
+chroot_pf_unload() {
+	[ -z "${CHROOT_APP_PF_RULES}" ] && return 0
+
+	pfctl -a "${CHROOT_APP_PF_ANCHOR}" -F all 2>/dev/null | true
+
+	return 0
+}
+
 chroot_port_mark_as_done() { # ports names
 	local __PORT_NAME
 	local __PKG_INFO_RAW
@@ -323,6 +340,9 @@ chroot_init() {
 
 	# Fixup deps
 	chroot_deps_fixup
+
+	# Network ACL, optional.
+	chroot_pf_load
 }
 
 chroot_deinit() {
@@ -330,6 +350,8 @@ chroot_deinit() {
 	if [ ! -d "${CHROOT_DIR}" ]; then
 		return 0
 	fi
+
+	chroot_pf_unload
 
 	mount | grep " on ${CHROOT_DIR}/" | cut -d ' ' -f 3-255 | cut -d '(' -f 1 | sed 's/.$//' | xargs umount -f
 	#chflags -R noschg "${CHROOT_DIR}"
@@ -346,6 +368,9 @@ chroot_main() {
 	# Auto defaults.
 	if [ -z "${CHROOT_GROUP}" ]; then
 		CHROOT_GROUP=`/usr/bin/id -gn ${CHROOT_USER}`
+	fi
+	if [ -z "${CHROOT_APP_PF_ANCHOR}" ]; then
+		CHROOT_APP_PF_ANCHOR="chroot_env/${CHROOT_USER}"
 	fi
 
 	# Handle command.

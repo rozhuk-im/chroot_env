@@ -1,0 +1,49 @@
+#!/bin/sh
+### Chroot config file for www/firefox (swap for any other browser port)
+###
+### Prerequisites, both one-time:
+###  1) pw useradd browser -c "sandboxed browser" -d /nonexistent -s /usr/sbin/nologin
+###  2) in the host pf.conf, so per-app anchors below get evaluated at all:
+###       anchor "chroot_env/*"
+###
+
+
+CHROOT_DIR='/var/run/chroot-browser'
+CHROOT_USER='browser'
+# Firefox + deps is large; this is a starting point, size up after the
+# first "start" if chroot_deps_fixup pulls in more than this.
+CHROOT_MNT_ROOT_SIZE='768m'
+CHROOT_MNT_TMP_SIZE='64m'
+CHROOT_MNT_TMP_ARGS='-o noexec -o nosuid -o inodes=16k'
+# Only the profile persists across restarts; everything else is rebuilt
+# from ports each time. Keep this to just the profile dir, not the whole
+# install, to keep the blast radius small - it's still noexec/nosuid.
+CHROOT_MNT_MAP_RW="
+/home/browser/.mozilla
+/var/run
+"
+CHROOT_PORTS_WITH_DEPS_NAMES="
+www/firefox
+"
+
+# DNS resolver and TLS trust store need nothing extra here: CHROOT_BASE_CP_LIST
+# already copies /etc/resolv.conf, /etc/nsswitch.conf and /etc/ssl (the CA
+# bundle, if security/ca_root_nss is installed) into every chroot.
+# Point /etc/resolv.conf at a local filtering resolver (see the "unbound"
+# example) for a second layer of control alongside the rules below.
+
+# Network ACL: only 80/443 outbound for CHROOT_USER, everything else denied.
+# Two things that must both be true or this silently under/over-restricts:
+#  - every "pass" needs "quick": app rules run before the block-all this
+#    script appends, and without quick they lose to it.
+#  - every rule needs "user ${CHROOT_USER}": anchor evaluation isn't scoped
+#    by anchor name alone, so a rule without it can pass traffic for other
+#    processes on the host too, not just this chroot.
+CHROOT_APP_PF_RULES="
+pass out quick proto tcp to any port {80, 443} user ${CHROOT_USER}
+"
+
+# Routing-level restriction (deny the LAN, force a gateway/proxy) and true
+# network-namespace isolation are both outside what this script can do,
+# since it never execs the target app - see the "Network" section of
+# readme.md for setfib usage at the actual chroot(8)/rc.d invocation site.

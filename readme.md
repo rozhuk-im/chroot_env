@@ -33,7 +33,7 @@ Support the author
 chroot_env.sh CONFIG_FILE_NAME start|stop|restart
 chroot_env.sh PATH_TO_CONFIG_FILE_NAME start|stop|restart
 ```
-If the path to the chroot configuration file is not specified, then it is used by default: CHROOT_CFG_DIR=`/usr/local/etc/chroot`. <br/>
+If the path to the chroot configuration file is not specified, then it is used by default: `/usr/local/etc/chroot`. <br/>
 
 
 ### Chroot options
@@ -58,6 +58,10 @@ If the path to the chroot configuration file is not specified, then it is used b
 * **CHROOT_APP_EXEC_LIST** - a list of executable files to be copied into the chroot. This is used to copy executable files and all their dependencies. It's ideal for listing system-related files to be copied into the chroot, as well as simple programs installed from ports. <br/>
 <br/>
 
+* **CHROOT_APP_PF_RULES** - PF rules (pf.conf syntax) loaded into a per-app anchor. Opt-in: leave unset and no PF integration happens at all, nothing changes. See "Network" below. <br/>
+* **CHROOT_APP_PF_ANCHOR** - name of the PF anchor `CHROOT_APP_PF_RULES` is loaded into. Default: `chroot_env/${CHROOT_USER}`. <br/>
+<br/>
+
 * **CHROOT_PORTS_NAMES** - a list of ports to be cloned into the chroot, excluding dependencies. <br/>
 * **CHROOT_PORTS_DEPS_NAMES** - is a list of ports for which their dependencies must also be cloned. <br/>
 * **CHROOT_PORTS_WITH_DEPS_NAMES** — a list of ports to be cloned into the chroot, along with their dependencies. Ports listed in `CHROOT_PORTS_STOP_LIST` are excluded from the dependencies. This is ideal for complex ports that require text files and other binary files in addition to executables. <br/>
@@ -67,6 +71,35 @@ If the path to the chroot configuration file is not specified, then it is used b
 
 * **CHROOT_INIT_HOOK** - A shell script function called at the final stage of creating a chroot environment. It is used when additional actions are required. See examples: apcupsd, php-dokuwiki, php-nextcloud, sh. By default, chroot_init_hook_default() is called, which remounts the chroot to RO: `mount -u -o ro "${CHROOT_DIR}"`. <br/>
 * **CHROOT_DEINIT_HOOK** - A shell script function called before destroying the chroot environment. Used when additional actions are required. See examples: php-nextcloud. <br/>
+
+
+### Network (optional)
+By itself chroot(2) does not isolate the network stack: a process inside the chroot has exactly the same access to sockets and interfaces as `CHROOT_USER` has on the host. `CHROOT_APP_PF_RULES` adds an opt-in network ACL on top of that, using PF's `user` match instead of a separate network stack/VNET jail - so it stays inside the "light, no jails" scope of this script. <br/>
+<br/>
+
+One-time setup in the host `pf.conf`, so per-app anchors actually get evaluated (leave this out and `CHROOT_APP_PF_RULES` still loads fine, it just never applies to any traffic): <br/>
+``` shell
+anchor "chroot_env/*"
+```
+Then, per app: <br/>
+``` shell
+CHROOT_APP_PF_RULES="
+pass out quick proto tcp to any port {80, 443} user ${CHROOT_USER}
+"
+```
+`start` loads this into `CHROOT_APP_PF_ANCHOR` (`pfctl -a ... -f -`) with a `block return out quick user ${CHROOT_USER}` / `block in quick user ${CHROOT_USER}` pair appended after it, so anything not explicitly passed is denied; `stop` flushes the anchor (`pfctl -a ... -F all`). Two things have to hold for every rule in `CHROOT_APP_PF_RULES`, or it silently under- or over-restricts: <br/>
+* needs `quick` - app rules are evaluated before the appended block pair, so without `quick` they lose to it. <br/>
+* needs `user ${CHROOT_USER}` - anchor evaluation isn't scoped by anchor name alone; a rule without it can pass traffic for other processes on the host too, not just this chroot. <br/>
+<br/>
+
+DNS resolver and TLS trust store need no extra config: `CHROOT_BASE_CP_LIST` already includes `/etc/resolv.conf`, `/etc/nsswitch.conf` and `/etc/ssl` (the CA bundle, if `security/ca_root_nss` is installed) for every chroot. Point `/etc/resolv.conf` at a locally filtering resolver - see the `unbound` example - for a second layer of control alongside the PF rules above. <br/>
+<br/>
+
+Two things this cannot do, since the script only manages the chroot environment and never execs the target application itself - that happens via `chroot(8)`/`rc.d`: <br/>
+* **Routing-level restriction** (deny the LAN, force a gateway/proxy) - allocate a FIB (`net.fibs` in `loader.conf`) and prefix the actual invocation with `setfib`, e.g. `setfib 1 chroot "${CHROOT_DIR}" ...`. <br/>
+* **True network isolation** (own interface, routing table invisible to the host) - that's what VNET jails are for; at that point use jails instead of this script. <br/>
+
+See `examples/browser` for all of the above together. <br/>
 
 
 ### Integration with services
