@@ -9,7 +9,8 @@ set -e
 
 # Init constants.
 # To avoid having each word of the reason treated separately.
-IFS=$'\n'
+IFS='
+'
 
 CHROOT_DEVFS_RULES="
 hide
@@ -106,13 +107,15 @@ CHROOT_DEINIT_HOOK=''
 
 
 chroot_cp() { # filename/dir
+	# shellcheck disable=SC3043
 	local __FN
 
 	for __FN in "${@}"; do
 		[ ! -r "${__FN}" ] && continue
 		[ -r "${CHROOT_DIR}/${__FN}" ] && continue
 
-		mkdir -p -m 0555 ${CHROOT_DIR}/`dirname "${__FN}"`
+		# shellcheck disable=SC2174
+		mkdir -p -m 0555 "${CHROOT_DIR}/"$(dirname "${__FN}")
 		cp -aRL "${__FN}" "${CHROOT_DIR}/${__FN}"
 	done
 
@@ -120,16 +123,16 @@ chroot_cp() { # filename/dir
 }
 
 chroot_cp_bin_withdep() { # filename
-	local __FN
-	local __DEPS
+	# shellcheck disable=SC3043
+	local __FN __DEPS
 
 	for __FN in "${@}"; do
 		[ ! -r "${__FN}" ] && continue
 
-		__DEPS=`ldd -a "${__FN}" 2>/dev/null | grep '=>' | sed 's|.*=> ||g' | sed 's| (.*)||g' | sort -u`
+		__DEPS=$(ldd -a "${__FN}" 2>/dev/null | grep '=>' | sed 's|.*=> ||g' | sed 's| (.*)||g' | sort -u)
 		# Fallback, mostly for GO apps.
 		if [ -z "${__DEPS}" ]; then
-			__DEPS=`readelf --elf-output-style=GNU --needed-libs "${__FN}" 2>/dev/null | grep '  ' | sed -e 's|  ||g' | xargs -L 1 -J % locate % 2>/dev/null | grep -v '/mnt/' | grep -v '/tmp/' | grep -v '/usr/obj/' | grep -v '/usr/src/' | grep -v '/var/' | sort -u`
+			__DEPS=$(readelf --elf-output-style=GNU --needed-libs "${__FN}" 2>/dev/null | grep '  ' | sed -e 's|  ||g' | xargs -L 1 -J % locate % 2>/dev/null | grep -v '/mnt/' | grep -v '/tmp/' | grep -v '/usr/obj/' | grep -v '/usr/src/' | grep -v '/var/' | sort -u)
 		fi
 		for __DEP in ${__DEPS}; do
 			[ -r "${CHROOT_DIR}/${__DEP}" ] && continue
@@ -144,9 +147,11 @@ chroot_cp_bin_withdep() { # filename
 }
 
 chroot_mount_single() { # ro/rw, filename/dir
+	# shellcheck disable=SC3043
 	local __DIR
 
 	if [ -d "${2}" ]; then
+		# shellcheck disable=SC2174
 		mkdir -p -m 0555 "${CHROOT_DIR}/${2}"
 		chown root:wheel "${CHROOT_DIR}/${2}"
 		mount_nullfs -o "${1}" -o nocache -o noatime -o noexec -o nosuid "${2}" "${CHROOT_DIR}/${2}"
@@ -154,7 +159,8 @@ chroot_mount_single() { # ro/rw, filename/dir
 	fi
 
 	if [ -f "${2}" ]; then
-		__DIR=`dirname ${2}`
+		__DIR=$(dirname "${2}")
+		# shellcheck disable=SC2174
 		mkdir -p -m 0555 "${CHROOT_DIR}/${__DIR}"
 		chown root:wheel "${CHROOT_DIR}/${__DIR}"
 		touch "${2}" "${CHROOT_DIR}/${2}"
@@ -171,7 +177,7 @@ chroot_pf_load() { # opt-in via CHROOT_APP_PF_RULES
 	[ -z "${CHROOT_APP_PF_RULES}" ] && return 0
 
 	# App rules first, they need "quick" to win over the deny-all below.
-	printf '%s\n' ${CHROOT_APP_PF_RULES} "block return out quick user ${CHROOT_USER}" "block in quick user ${CHROOT_USER}" | pfctl -a "${CHROOT_APP_PF_ANCHOR}" -f -
+	printf '%s\n' "${CHROOT_APP_PF_RULES}" "block return out quick user ${CHROOT_USER}" "block in quick user ${CHROOT_USER}" | pfctl -a "${CHROOT_APP_PF_ANCHOR}" -f -
 
 	return 0
 }
@@ -185,17 +191,14 @@ chroot_pf_unload() {
 }
 
 chroot_port_mark_as_done() { # ports names
-	local __PORT_NAME
-	local __PKG_INFO_RAW
-	local __PKG_NAME
-	local __PKG_VER
-	local __PKG_NAME_VER
+	# shellcheck disable=SC3043
+	local __PORT_NAME __PKG_INFO_RAW __PKG_NAME __PKG_VER __PKG_NAME_VER
 
 	for __PORT_NAME in "${@}"; do
 		# Make sure that port name is in proper format.
-		__PKG_INFO_RAW=`pkg info --full --quiet "${__PORT_NAME}"`
-		__PKG_NAME=`echo "${__PKG_INFO_RAW}" | grep 'Name           : ' | sed -e 's|Name           : ||g' | tr -d '\n'`
-		__PKG_VER=`echo "${__PKG_INFO_RAW}" | grep 'Version        : ' | sed -e 's|Version        : ||g' | tr -d '\n'`
+		__PKG_INFO_RAW=$(pkg info --full --quiet "${__PORT_NAME}")
+		__PKG_NAME=$(echo "${__PKG_INFO_RAW}" | grep 'Name           : ' | sed -e 's|Name           : ||g' | tr -d '\n')
+		__PKG_VER=$(echo "${__PKG_INFO_RAW}" | grep 'Version        : ' | sed -e 's|Version        : ||g' | tr -d '\n')
 		__PKG_NAME_VER="${__PKG_NAME}-${__PKG_VER}"
 		touch "${CHROOT_DIR}/var/db_chroot/ports/${__PKG_NAME_VER}"
 		touch "${CHROOT_DIR}/var/db_chroot/ports/${__PKG_NAME_VER}.deps"
@@ -205,24 +208,20 @@ chroot_port_mark_as_done() { # ports names
 }
 
 chroot_port_clone() { # ports names
-	local __PORT_NAME
-	local __PKG_INFO_RAW
-	local __PKG_NAME
-	local __PKG_VER
-	local __PKG_NAME_VER
-	local __DIR
-	local __TAR_EXCLUDE
+	# shellcheck disable=SC3043
+	local __PORT_NAME __PKG_INFO_RAW __PKG_NAME __PKG_VER __PKG_NAME_VER __DIR __TAR_EXCLUDE
 
 	for __DIR in ${CHROOT_BASE_PORTS_FILES_EXCLUDE_LIST} ${CHROOT_APP_CP_LIST} ${CHROOT_PORTS_FILES_EXCLUDE_LIST}; do
 		__TAR_EXCLUDE="${__TAR_EXCLUDE} --exclude ${__DIR}"
 	done
 
+	# shellcheck disable=SC3043
 	local IFS=' '
 	for __PORT_NAME in "${@}"; do
 		# Make sure that port name is in proper format.
-		__PKG_INFO_RAW=`pkg info --full --quiet "${__PORT_NAME}"`
-		__PKG_NAME=`echo "${__PKG_INFO_RAW}" | grep 'Name           : ' | sed -e 's|Name           : ||g' | tr -d '\n'`
-		__PKG_VER=`echo "${__PKG_INFO_RAW}" | grep 'Version        : ' | sed -e 's|Version        : ||g' | tr -d '\n'`
+		__PKG_INFO_RAW=$(pkg info --full --quiet "${__PORT_NAME}")
+		__PKG_NAME=$(echo "${__PKG_INFO_RAW}" | grep 'Name           : ' | sed -e 's|Name           : ||g' | tr -d '\n')
+		__PKG_VER=$(echo "${__PKG_INFO_RAW}" | grep 'Version        : ' | sed -e 's|Version        : ||g' | tr -d '\n')
 		__PKG_NAME_VER="${__PKG_NAME}-${__PKG_VER}"
 		# Is port already cloned?
 		[ -f "${CHROOT_DIR}/var/db_chroot/ports/${__PKG_NAME_VER}" ] && continue
@@ -240,11 +239,11 @@ chroot_port_clone() { # ports names
 
 # Does not clone port, only its deps.
 chroot_port_deps_clone() { # ports names
-	local __PORT_NAME
-	local __PKG_NAME_VER
+	# shellcheck disable=SC3043
+	local __PORT_NAME __PKG_NAME_VER
 
 	for __PORT_NAME in "${@}"; do
-		for __PKG_NAME_VER in `pkg info --dependencies --quiet "${__PORT_NAME}" | grep -v '	'`; do
+		for __PKG_NAME_VER in $(pkg info --dependencies --quiet "${__PORT_NAME}" | grep -v '	'); do
 			# Is port already cloned?
 			[ -f "${CHROOT_DIR}/var/db_chroot/ports/${__PKG_NAME_VER}.deps" ] && continue
 			touch "${CHROOT_DIR}/var/db_chroot/ports/${__PKG_NAME_VER}.deps"
@@ -258,14 +257,14 @@ chroot_port_deps_clone() { # ports names
 
 chroot_deps_fixup() {
 	# Bins.
-	chroot_cp_bin_withdep `find "${CHROOT_DIR}/" -type f -executable | sort -u | sed "s|${CHROOT_DIR}||g"`	
+	chroot_cp_bin_withdep $(find "${CHROOT_DIR}/" -type f -executable | sort -u | sed "s|${CHROOT_DIR}||g")
 	# Libs.
-	chroot_cp_bin_withdep `find "${CHROOT_DIR}/" -type f -name '*.so*' | sort -u | sed "s|${CHROOT_DIR}||g"`
+	chroot_cp_bin_withdep $(find "${CHROOT_DIR}/" -type f -name '*.so*' | sort -u | sed "s|${CHROOT_DIR}||g")
 }
 
 chroot_init() {
-	local __DIR
-	local __RULE
+	# shellcheck disable=SC3043
+	local __DIR __RULE
 
 	if [ -d "${CHROOT_DIR}" ]; then
 		echo "Dir already exist ${CHROOT_DIR}!"
@@ -273,15 +272,18 @@ chroot_init() {
 	fi
 
 	# Create chroot dir.
+	# shellcheck disable=SC2174
 	mkdir -p -m 0555 "${CHROOT_DIR}"
 	echo -o rw -o nomtime -o size="${CHROOT_MNT_ROOT_SIZE}" ${CHROOT_MNT_ROOT_ARGS} -t tmpfs tmpfs "${CHROOT_DIR}" | xargs mount
 	# Init /tmp, /var/tmp.
+	# shellcheck disable=SC2174
 	mkdir -p -m 0777 "${CHROOT_DIR}/tmp" "${CHROOT_DIR}/var"
 	echo -o rw -o nomtime -o pgread -o size="${CHROOT_MNT_TMP_SIZE}" -o mode=0777 ${CHROOT_MNT_TMP_ARGS} -t tmpfs tmpfs "${CHROOT_DIR}/tmp" | xargs mount
 	chmod 1777 "${CHROOT_DIR}/tmp"
 	ln -sf '/tmp' "${CHROOT_DIR}/var/tmp"
 	# Create dirs.
 	for __DIR in ${CHROOT_BASE_DIRS_LIST}; do
+		# shellcheck disable=SC2174
 		mkdir -p -m 0555 "${CHROOT_DIR}/${__DIR}"
 	done
 	chown -R root:wheel "${CHROOT_DIR}"
@@ -300,9 +302,14 @@ chroot_init() {
 	echo '::1 localhost' >		"${CHROOT_DIR}/etc/hosts"
 	echo '127.0.0.1 localhost' >>	"${CHROOT_DIR}/etc/hosts"
 	# Passwords.
-	grep "^${CHROOT_USER}" '/etc/master.passwd' > "${CHROOT_DIR}/etc/master.passwd"
-	grep "^${CHROOT_USER}" '/etc/passwd' > "${CHROOT_DIR}/etc/passwd"
-	grep "^${CHROOT_GROUP}" '/etc/group' > "${CHROOT_DIR}/etc/group"
+	grep "^${CHROOT_USER}:" '/etc/master.passwd' > "${CHROOT_DIR}/etc/master.passwd"
+	grep "^${CHROOT_USER}:" '/etc/passwd' > "${CHROOT_DIR}/etc/passwd"
+	# Groups.
+	(	grep "^${CHROOT_GROUP}:" '/etc/group' ;
+		grep "^${CHROOT_USER}:" '/etc/group' ;
+		grep -E ":(.*,)?${CHROOT_USER}(,|$)" '/etc/group' ;
+	) | sort -u > "${CHROOT_DIR}/etc/group"
+
 	cap_mkdb -f "${CHROOT_DIR}/etc/login.conf" "${CHROOT_DIR}/etc/login.conf"
 	pwd_mkdb -d "${CHROOT_DIR}/etc" "${CHROOT_DIR}/etc/master.passwd"
 
@@ -367,7 +374,7 @@ chroot_init_hook_default() {
 chroot_main() {
 	# Auto defaults.
 	if [ -z "${CHROOT_GROUP}" ]; then
-		CHROOT_GROUP=`/usr/bin/id -gn ${CHROOT_USER}`
+		CHROOT_GROUP=$(/usr/bin/id -gn "${CHROOT_USER}")
 	fi
 	if [ -z "${CHROOT_APP_PF_ANCHOR}" ]; then
 		CHROOT_APP_PF_ANCHOR="chroot_env/${CHROOT_USER}"
@@ -410,9 +417,11 @@ chroot_main() {
 
 
 if [ -f "${1}" ]; then
+	# shellcheck disable=SC1090
 . "${1}"
 else
 	if [ -f "${CHROOT_CFG_DIR}/${1}" ]; then
+		# shellcheck disable=SC1090
 . "${CHROOT_CFG_DIR}/${1}"
 	else
 		echo "Chroot env config \'${1}\' not found!"
@@ -420,7 +429,7 @@ else
 	fi
 fi
 
-chroot_main ${2}
+chroot_main "${2}"
 
 
 exit 0
