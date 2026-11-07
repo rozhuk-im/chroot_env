@@ -29,12 +29,12 @@ CHROOT_INIT_HOOK='chroot_init_hook_fn'
 chroot_init_hook_fn() {
 	# RW app data.
 	mkdir -p -m 0555 "${CHROOT_DIR}/usr/local/www/nextcloud/apps" "${CHROOT_DIR}/usr/local/www/nextcloud/config" "${CHROOT_DIR}/usr/local/www/nextcloud/data"
-	mount_nullfs -o rw -o nocache -o noatime -o noexec -o nosuid '/var/db/chroots/nextcloud/apps' "${CHROOT_DIR}/usr/local/www/nextcloud/apps"
-	mount_nullfs -o rw -o nocache -o noatime -o noexec -o nosuid '/var/db/chroots/nextcloud/config' "${CHROOT_DIR}/usr/local/www/nextcloud/config"
+	mount -t nullfs -o rw -o nocache -o noatime -o noexec -o nosuid '/var/db/chroots/nextcloud/apps' "${CHROOT_DIR}/usr/local/www/nextcloud/apps"
+	mount -t nullfs -o rw -o nocache -o noatime -o noexec -o nosuid '/var/db/chroots/nextcloud/config' "${CHROOT_DIR}/usr/local/www/nextcloud/config"
 	cp -af '/var/db/chroots/nextcloud/.user.ini' "${CHROOT_DIR}/usr/local/www/nextcloud/.user.ini"
 	# Supress error, it will not work.
 	if [ -d '/mnt/backup/nextcloud/data' ]; then
-		mount_nullfs -o rw -o nocache -o noatime -o noexec -o nosuid '/mnt/backup/nextcloud/data' "${CHROOT_DIR}/usr/local/www/nextcloud/data"
+		mount -t nullfs -o rw -o nocache -o noatime -o noexec -o nosuid '/mnt/backup/nextcloud/data' "${CHROOT_DIR}/usr/local/www/nextcloud/data"
 	fi
 	# Lockup changes.
 	mount -u -o ro "${CHROOT_DIR}"

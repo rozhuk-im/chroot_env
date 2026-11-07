@@ -154,7 +154,7 @@ chroot_mount_single() { # ro/rw, filename/dir
 		# shellcheck disable=SC2174
 		mkdir -p -m 0555 "${CHROOT_DIR}/${2}"
 		chown root:wheel "${CHROOT_DIR}/${2}"
-		mount_nullfs -o "${1}" -o nocache -o noatime -o noexec -o nosuid "${2}" "${CHROOT_DIR}/${2}"
+		mount -t nullfs -o "${1}" -o nocache -o noatime -o noexec -o nosuid "${2}" "${CHROOT_DIR}/${2}"
 		return 0
 	fi
 
@@ -165,7 +165,7 @@ chroot_mount_single() { # ro/rw, filename/dir
 		chown root:wheel "${CHROOT_DIR}/${__DIR}"
 		touch "${2}" "${CHROOT_DIR}/${2}"
 		chown "${CHROOT_USER}:${CHROOT_GROUP}" "${CHROOT_DIR}/${2}"
-		mount_nullfs -o "${1}" -o nocache -o noatime -o noexec -o nosuid "${2}" "${CHROOT_DIR}/${2}"
+		mount -t nullfs -o "${1}" -o nocache -o noatime -o noexec -o nosuid "${2}" "${CHROOT_DIR}/${2}"
 		return 0
 	fi
 
