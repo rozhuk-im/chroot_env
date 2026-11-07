@@ -29,4 +29,6 @@ chroot_init_hook_fn() {
 	# RW app data.
 	mount_nullfs -o rw -o nocache -o noatime -o noexec -o nosuid '/var/db/chroots/dokuwiki/conf' "${CHROOT_DIR}/usr/local/www/wiki/conf"
 	mount_nullfs -o rw -o nocache -o noatime -o noexec -o nosuid '/var/db/chroots/dokuwiki/data' "${CHROOT_DIR}/usr/local/www/wiki/data"
+	# Lockup changes.
+	mount -u -o ro "${CHROOT_DIR}"
 }

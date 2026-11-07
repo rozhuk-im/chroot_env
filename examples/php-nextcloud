@@ -36,6 +36,8 @@ chroot_init_hook_fn() {
 	if [ -d '/mnt/backup/nextcloud/data' ]; then
 		mount_nullfs -o rw -o nocache -o noatime -o noexec -o nosuid '/mnt/backup/nextcloud/data' "${CHROOT_DIR}/usr/local/www/nextcloud/data"
 	fi
+	# Lockup changes.
+	mount -u -o ro "${CHROOT_DIR}"
 }
 CHROOT_DEINIT_HOOK='chroot_deinit_hook_fn'
 chroot_deinit_hook_fn() {
