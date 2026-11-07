@@ -1,0 +1,15 @@
+#!/bin/sh
+### Rozhuk Ivan 2026
+### chroot config file for filesystems/mcp-filesystem
+###
+
+
+CHROOT_DIR='/var/run/mcp-filesystem'
+CHROOT_USER='nobody'
+CHROOT_GROUP='nobody'
+CHROOT_MNT_ROOT_SIZE='24m'
+CHROOT_MNT_TMP_SIZE='8m'
+CHROOT_MNT_TMP_ARGS='-o noexec -o nosuid -o inodes=8k'
+CHROOT_APP_CP_LIST="
+/usr/local/bin/mcp-filesystem
+"
